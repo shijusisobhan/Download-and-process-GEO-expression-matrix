@@ -1,0 +1,131 @@
+---
+title: "Download and process GEO Gene expression matrix"
+author: "Shiju Sisobhan"
+date: "2024-03-07"
+output: html_document
+---
+
+This tutorial demonstrate how to download GEO gene expression matrix quickly and easily. Gene expression matrix is a table with genes as row and samples as the column. Each cell value, g~ij~ is the gene expression value correspond to the gene,'g~i~' for the sample S~j~
+
+## Gene Expression Omnibus (GEO) data organization
+GEO is a public repository that archives and freely distributes high-throughput genomics data including NGS, and microarray. GEO data are organized as different entities and provide unique accession numbers for each of these entities asfollows
+
+1. Platform - GPLxxx
+2. Samples  - GSMxxx
+3. Series   - GSExxx
+4. Dataset  - GDSxxx
+
+If we have the accession numbers, we can readily retrieve the data using R, facilitating downstream analyses such as differential expression and gene enrichment analysis. Below, we illustrate how to download an expression matrix (series) containing official gene symbols and sample names, rather than solely probe names and sample numbers.We are downloading the series with accession number GSE122541. The work is related to Shift work disrupts circadian regulation of the transcriptome in hospital nurses.
+
+Load the required library.
+```{r, message=FALSE}
+library(GEOquery)
+```
+Let's access GSE122541
+
+```{r}
+gset <- getGEO("GSE122541", GSEMatrix =TRUE, getGPL=FALSE)
+```
+Let see what type of the data we have:
+```{r}
+class(gset)
+```
+*gset* is a list. Check what information it has:
+
+```{r}
+list(gset)
+```
+
+This Gene expression data have 47323 features (genes), and 44 samples. The sample accession numbers are GSM3473465, GSM3473466. Its platform accession number is GPL10558. We can access the series GSM3473465 as follows:
+```{r}
+gsm<-getGEO('GSM3473465')
+Table(gsm)[1:5,1:3] # See the first 5 rows and 3 columns
+
+```
+ID_REF column is the probe ID for a a particular gene and the VALUE is the corresponding gene expression for the sample GSM3473465. Now check what sample it is:
+```{r}
+head(Meta(gsm))
+```
+The variable *$characteristics_ch1* contains the sample information. The sample is a female, fasted, day-shift subject, and was taken at 9 o'clock. Instead of simply labeling it as GSM3473465, one can assign a more meaningful name to this sample. For instance, if focusing on work shift and time, it could be named as *Day-shift_9*. Now we are trying to extract the gene expression for all the samples.
+```{r}
+gset<-gset[[1]]
+gset_expr<-exprs(gset)
+gset_expr[1:5,1:5] # show 5 row and columns of the expression data
+```
+We can visualize the distribution of the expression data:
+```{r}
+hist(gset_expr)
+```
+
+
+ The probe IDs are the row names of the expression data. 
+```{r}
+Probe_ID<- as.character(rownames(gset_expr) ) #get the probe ID
+gset_expr_ProbID<-as.data.frame(cbind(Probe_ID, gset_expr)) # Bind Probe ID and EXpr data
+```
+
+### Assign gene symbol to probe ID
+We can now try to assign gene symbols to probe ID.Get the platform information using platform access number GPL10558
+```{r}
+gpl<-getGEO("GPL10558")
+gpl_table<-Table(gpl)
+gpl_table[1:10, 1:7]
+```
+Extract the columns *ID* and *ILMN_Gene* and combine it with gene expression data
+
+```{r}
+ID_Gene<- dplyr::select(gpl_table,'ID', 'ILMN_Gene') # select the ID and gene name
+gset_expr_ProbID<-(subset(gset_expr_ProbID, Probe_ID %in% ID_Gene$ID)) # subset matching IDs
+gset_exp_GeneName<-dplyr::right_join(x = ID_Gene,y=gset_expr_ProbID,  by = c("ID" = "Probe_ID")) # Combine gene name with gene expression
+gset_exp_GeneName<-gset_exp_GeneName[-1]
+colnames(gset_exp_GeneName)[1]<-'Gene_symbol'
+gset_exp_GeneName[1:5,1:5]
+```
+### Assign meaningful sample name to sample number
+
+To access the sample information from GEO Omnibus, I have created the following function.
+
+```{r}
+
+GetSampleInfo <- function(gset){
+  tmp <- pData(gset)[,grep("characteristics",colnames(pData(gset)))]
+  samps <- rownames(tmp)
+  longChar <- do.call(rbind,lapply(tmp,function(z){
+    z<-as.character(z)
+    z1 <- substr(z,1,regexpr(": ",z)-1)
+    z2 <- substr(z,regexpr(": ",z)+2,nchar(z))
+    cbind(samps,z1,z2)[z1!="",]
+  }))
+  chars <- unique(longChar[,2])
+  out <- matrix(nrow=length(samps),nc=length(chars),dimnames=list(samps,chars))
+  out[longChar[,1:2]] <- longChar[,3]
+  colnames(out) <- make.names(colnames(out))
+  out <- as.data.frame(out)
+  out <- out[colnames(exprs(gset)),]
+  return(out)	
+}
+
+```
+
+Call GetSampleInfo() function with *gset* as the passing argument for sample information
+
+```{r}
+sample_Info <- GetSampleInfo(gset)
+head(sample_Info)
+```
+We are interested on work shift and time as the sample name. So combine these two string.
+```{r, message=FALSE}
+library('stringr') # Load the required library for concatenate strings.
+sample_Info$sample_name <- str_c(sample_Info$work.shift,'_', sample_Info$time.of.sample)
+head(sample_Info)
+```
+Now we can replace the sample number with newly created sample name as follows:
+```{r}
+sample_name<-c('Gene_symbol', t(sample_Info$sample_name))
+Expression_matrix<-rbind(sample_name, gset_exp_GeneName)
+colnames(Expression_matrix)<-Expression_matrix[1,]
+Expression_matrix<-Expression_matrix[-1,]
+row.names(Expression_matrix)<-NULL
+Expression_matrix[1:5,1:5] # show first 5 genes and samples
+```
+Hope that everyone can follow it. If you have queries please contact me at shijusisobhan@gmail.com
