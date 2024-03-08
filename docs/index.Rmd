@@ -1,5 +1,5 @@
 ---
-title: "Download and process GEO Gene expression matrix"
+title: "Download and process GEO Gene expression matrix using R"
 author: "Shiju Sisobhan"
 date: "2024-03-07"
 output: html_document
