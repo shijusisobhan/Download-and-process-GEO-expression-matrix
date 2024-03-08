@@ -5,7 +5,7 @@ date: "2024-03-07"
 output: html_document
 ---
 
-This tutorial demonstrate how to download GEO gene expression matrix quickly and easily. Gene expression matrix is a table with genes as row and samples as the column. Each cell value, g~ij~ is the gene expression value correspond to the gene,'g~i~' for the sample S~j~
+This tutorial demonstrate how to download GEO gene expression matrix quickly and easily using R. Gene expression matrix is a table with genes as row and samples as the column. Each cell value, g~ij~ is the gene expression value correspond to the gene,'g~i~' for the sample S~j~
 
 ## Gene Expression Omnibus (GEO) data organization
 GEO is a public repository that archives and freely distributes high-throughput genomics data including NGS, and microarray. GEO data are organized as different entities and provide unique accession numbers for each of these entities asfollows
@@ -15,7 +15,11 @@ GEO is a public repository that archives and freely distributes high-throughput 
 3. Series   - GSExxx
 4. Dataset  - GDSxxx
 
-If we have the accession numbers, we can readily retrieve the data using R, facilitating downstream analyses such as differential expression and gene enrichment analysis. Below, we illustrate how to download an expression matrix (series) containing official gene symbols and sample names, rather than solely probe names and sample numbers.We are downloading the series with accession number GSE122541. The work is related to Shift work disrupts circadian regulation of the transcriptome in hospital nurses.
+If we have the accession numbers, we can readily retrieve the data using R, facilitating downstream analyses such as differential expression and gene enrichment analysis. Below, I illustrate how to download an expression matrix (series) containing official gene symbols and sample names, rather than solely probe names and sample numbers.We are downloading the series with accession number GSE122541. The work is related to Shift work disrupts circadian regulation of the transcriptome in hospital nurses.
+
+### Prerequisite
+R program installed\
+library *GEOquery*, *stringr*
 
 Load the required library.
 ```{r, message=FALSE}

@@ -359,10 +359,10 @@ matrix</h1>
 
 
 <p>This tutorial demonstrate how to download GEO gene expression matrix
-quickly and easily. Gene expression matrix is a table with genes as row
-and samples as the column. Each cell value, g<sub>ij</sub> is the gene
-expression value correspond to the gene,‘g<sub>i</sub>’ for the sample
-S<sub>j</sub></p>
+quickly and easily using R. Gene expression matrix is a table with genes
+as row and samples as the column. Each cell value, g<sub>ij</sub> is the
+gene expression value correspond to the gene,‘g<sub>i</sub>’ for the
+sample S<sub>j</sub></p>
 <div id="gene-expression-omnibus-geo-data-organization" class="section level2">
 <h2>Gene Expression Omnibus (GEO) data organization</h2>
 <p>GEO is a public repository that archives and freely distributes
@@ -377,12 +377,16 @@ for each of these entities asfollows</p>
 </ol>
 <p>If we have the accession numbers, we can readily retrieve the data
 using R, facilitating downstream analyses such as differential
-expression and gene enrichment analysis. Below, we illustrate how to
+expression and gene enrichment analysis. Below, I illustrate how to
 download an expression matrix (series) containing official gene symbols
 and sample names, rather than solely probe names and sample numbers.We
 are downloading the series with accession number GSE122541. The work is
 related to Shift work disrupts circadian regulation of the transcriptome
 in hospital nurses.</p>
+<div id="prerequisite" class="section level3">
+<h3>Prerequisite</h3>
+<p>R program installed<br />
+library <em>GEOquery</em>, <em>stringr</em></p>
 <p>Load the required library.</p>
 <pre class="r"><code>library(GEOquery)</code></pre>
 <p>Let’s access GSE122541</p>
@@ -463,6 +467,7 @@ gset_expr[1:5,1:5] # show 5 row and columns of the expression data</code></pre>
 <p>The probe IDs are the row names of the expression data.</p>
 <pre class="r"><code>Probe_ID&lt;- as.character(rownames(gset_expr) ) #get the probe ID
 gset_expr_ProbID&lt;-as.data.frame(cbind(Probe_ID, gset_expr)) # Bind Probe ID and EXpr data</code></pre>
+</div>
 <div id="assign-gene-symbol-to-probe-id" class="section level3">
 <h3>Assign gene symbol to probe ID</h3>
 <p>We can now try to assign gene symbols to probe ID.Get the platform
